@@ -35,7 +35,7 @@ func getInstrumentedPipPath() (string, error) {
 
 func getConstraintsFilePath() (string, error) {
 	here, _ := executable.Folder()
-	cPath := filepath.Join(here, "..", "..", constraints)
+	cPath := filepath.Join(here, "..", "..", constraintsFile)
 
 	if _, err := os.Stat(cPath); err != nil {
 		if os.IsNotExist(err) {
@@ -44,4 +44,17 @@ func getConstraintsFilePath() (string, error) {
 	}
 
 	return cPath, nil
+}
+
+func getTUFConfigFilePath() (string, error) {
+	here, _ := executable.Folder()
+	tPath := filepath.Join(here, "..", tufConfigFile)
+
+	if _, err := os.Stat(tPath); err != nil {
+		if os.IsNotExist(err) {
+			return nil, err
+		}
+	}
+
+	return tPath, nil
 }

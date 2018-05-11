@@ -16,7 +16,13 @@ import (
 )
 
 const (
-	constraints = "agent_requirements.txt"
+	constraintsFile = "agent_requirements.txt"
+	tufConfigFile   = "public-tuf-config.json"
+	tufPyPiServer   = "https://integrationsproxy.azurewebsites.net/simple/"
+)
+
+var (
+	withTuf bool
 )
 
 func init() {
@@ -24,7 +30,7 @@ func init() {
 	stuffCmd.AddCommand(installCmd)
 	stuffCmd.AddCommand(removeCmd)
 	stuffCmd.AddCommand(searchCmd)
-	stuffCmd.Flags().BoolVarP(&jsonStatus, "verbose", "v", false, "verbose output")
+	stuffCmd.Flags().BoolVarP(&withTuf, "tuf", "t", true, "use TUF repo")
 }
 
 var stuffCmd = &cobra.Command{
@@ -44,9 +50,7 @@ var removeCmd = &cobra.Command{
 	Use:   "remove [package]",
 	Short: "Remove Datadog integration/extra packages",
 	Long:  ``,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return nil
-	},
+	RunE:  removeStuff,
 }
 
 var searchCmd = &cobra.Command{
@@ -61,12 +65,21 @@ func stuff(args []string) error {
 	if err != nil {
 		return err
 	}
+	tufPath, err := getTUFConfigFilePath()
+	if err != nil && withTuf {
+		return err
+	}
 
 	stuffCmd := exec.Command(pipPath, args...)
 
 	var stdout, stderr bytes.Buffer
 	stuffCmd.Stdout = &stdout
 	stuffCmd.Stderr = &stderr
+	if withTuf {
+		stuffCmd.Env = append(os.Environ(),
+			fmt.Sprintf("TUF_CONFIG_FILE=%s", tufPath),
+		)
+	}
 
 	err = stuffCmd.Run()
 	if err != nil {
@@ -88,20 +101,32 @@ func installStuff(cmd *cobra.Command, args []string) error {
 		"install",
 		"-c", constraintsPath,
 	}
+	if withTuf {
+		stuffArgs = append(stuffArgs, "--index-url", tufPyPiServer)
+	}
 	stuffArgs = append(stuffArgs, args...)
 
 	return stuff(stuffArgs)
 }
 
 func removeStuff(cmd *cobra.Command, args []string) error {
-	return nil
+	stuffArgs := []string{
+		"uninstall",
+	}
+	stuffArgs = append(stuffArgs, args...)
+
+	return stuff(stuffArgs)
 }
 
 func searchStuff(cmd *cobra.Command, args []string) error {
+
 	stuffArgs := []string{
 		"search",
 	}
-
+	if withTuf {
+		stuffArgs = append(stuffArgs, "--index-url", tufPyPiServer)
+	}
 	stuffArgs = append(stuffArgs, args...)
+
 	return stuff(stuffArgs)
 }
