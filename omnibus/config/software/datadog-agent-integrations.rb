@@ -7,7 +7,7 @@ require './lib/ostools.rb'
 
 name 'datadog-agent-integrations'
 
-dependency 'pip'
+dependency 'datadog-pip'
 dependency 'datadog-agent'
 dependency 'protobuf-py'
 
@@ -54,6 +54,10 @@ build do
         " --hash=sha256:9515fe0a94e823fd90b08d22de45d7bde57c90edce705b22f5e1ecf7e1b653c8"
 
     all_reqs_file.close
+
+    # Add TUF metadata
+    copy "#{project_dir}/.public-tuf-config.json", "#{install_dir}/public-tuf-config.json"
+    File.chmod(0644, "#{install_dir}/public-tuf-config.json")
 
     # Install all the requirements
     if windows?
