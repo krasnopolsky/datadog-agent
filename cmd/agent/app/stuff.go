@@ -23,6 +23,7 @@ const (
 	constraintsFile = "agent_requirements.txt"
 	tufConfigFile   = "public-tuf-config.json"
 	tufPyPiServer   = "https://integrationsproxy.azurewebsites.net/simple/"
+	pyPiServer      = "https://pypi.org/simple/"
 )
 
 var (
@@ -146,6 +147,8 @@ func installStuff(cmd *cobra.Command, args []string) error {
 	}
 	if withTuf {
 		stuffArgs = append(stuffArgs, "--index-url", tufPyPiServer)
+		stuffArgs = append(stuffArgs, "--extra-index-url", pyPiServer)
+		stuffArgs = append(stuffArgs, "--disable-pip-version-check")
 	}
 	stuffArgs = append(stuffArgs, args...)
 
@@ -168,6 +171,8 @@ func searchStuff(cmd *cobra.Command, args []string) error {
 	}
 	if withTuf {
 		stuffArgs = append(stuffArgs, "--index-url", tufPyPiServer)
+		stuffArgs = append(stuffArgs, "--extra-index-url", pyPiServer)
+		stuffArgs = append(stuffArgs, "--disable-pip-version-check")
 	}
 	stuffArgs = append(stuffArgs, args...)
 
