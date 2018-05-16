@@ -56,8 +56,13 @@ build do
     all_reqs_file.close
 
     # Add TUF metadata
-    copy "#{project_dir}/.public-tuf-config.json", "#{install_dir}/public-tuf-config.json"
-    copy "#{project_dir}/.tuf-root.json", "#{install_dir}/root.json"
+    if windows?
+      copy "#{windows_safe_path(project_dir)}\\.public-tuf-config.json", "#{windows_safe_path(install_dir)}\\public-tuf-config.json"
+      copy "#{windows_safe_path(project_dir)}\\.tuf-root.json", "#{windows_safe_path(install_dir)}\\root.json"
+    else
+      copy "#{project_dir}/.public-tuf-config.json", "#{install_dir}/public-tuf-config.json"
+      copy "#{project_dir}/.tuf-root.json", "#{install_dir}/root.json"
+    end
     # File.chmod(0644, "#{install_dir}/public-tuf-config.json")
 
     # Install all the requirements
