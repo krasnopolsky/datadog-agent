@@ -27,18 +27,20 @@ const (
 )
 
 var (
-	withTuf bool
+	withTuf   bool
+	nativePkg bool
 )
 
 func init() {
-	AgentCmd.AddCommand(stuffCmd)
-	stuffCmd.AddCommand(installCmd)
-	stuffCmd.AddCommand(removeCmd)
-	stuffCmd.AddCommand(searchCmd)
-	stuffCmd.Flags().BoolVarP(&withTuf, "tuf", "t", true, "use TUF repo")
+	AgentCmd.AddCommand(tufCmd)
+	tufCmd.AddCommand(installCmd)
+	tufCmd.AddCommand(removeCmd)
+	tufCmd.AddCommand(searchCmd)
+	tufCmd.Flags().BoolVarP(&withTuf, "tuf", "t", true, "use TUF repo")
+	tufCmd.Flags().BoolVarP(&nativePkg, "pip-package", "p", false, "providing native pip package name")
 }
 
-var stuffCmd = &cobra.Command{
+var tufCmd = &cobra.Command{
 	Use:   "stuff [command]",
 	Short: "Datadog integration/package manager",
 	Long:  ``,
@@ -48,21 +50,21 @@ var installCmd = &cobra.Command{
 	Use:   "install [package]",
 	Short: "Install Datadog integration/extra packages",
 	Long:  ``,
-	RunE:  installStuff,
+	RunE:  installTuf,
 }
 
 var removeCmd = &cobra.Command{
 	Use:   "remove [package]",
 	Short: "Remove Datadog integration/extra packages",
 	Long:  ``,
-	RunE:  removeStuff,
+	RunE:  removeTuf,
 }
 
 var searchCmd = &cobra.Command{
 	Use:   "search [package]",
 	Short: "Search Datadog integration/extra packages",
 	Long:  ``,
-	RunE:  searchStuff,
+	RunE:  searchTuf,
 }
 
 func getInstrumentedPipPath() (string, error) {
@@ -104,7 +106,7 @@ func getTUFConfigFilePath() (string, error) {
 	return tPath, nil
 }
 
-func stuff(args []string) error {
+func tuf(args []string) error {
 	pipPath, err := getInstrumentedPipPath()
 	if err != nil {
 		return err
@@ -114,18 +116,18 @@ func stuff(args []string) error {
 		return err
 	}
 
-	stuffCmd := exec.Command(pipPath, args...)
+	tufCmd := exec.Command(pipPath, args...)
 
 	var stdout, stderr bytes.Buffer
-	stuffCmd.Stdout = &stdout
-	stuffCmd.Stderr = &stderr
+	tufCmd.Stdout = &stdout
+	tufCmd.Stderr = &stderr
 	if withTuf {
-		stuffCmd.Env = append(os.Environ(),
+		tufCmd.Env = append(os.Environ(),
 			fmt.Sprintf("TUF_CONFIG_FILE=%s", tufPath),
 		)
 	}
 
-	err = stuffCmd.Run()
+	err = tufCmd.Run()
 	if err != nil {
 		fmt.Printf("error running command: %v", stderr.String())
 	} else {
@@ -135,46 +137,47 @@ func stuff(args []string) error {
 	return err
 }
 
-func installStuff(cmd *cobra.Command, args []string) error {
+func installTuf(cmd *cobra.Command, args []string) error {
 	constraintsPath, err := getConstraintsFilePath()
 	if err != nil {
 		return err
 	}
 
-	stuffArgs := []string{
+	tufArgs := []string{
 		"install",
 		"-c", constraintsPath,
 	}
-	if withTuf {
-		stuffArgs = append(stuffArgs, "--index-url", tufPyPiServer)
-		stuffArgs = append(stuffArgs, "--extra-index-url", pyPiServer)
-		stuffArgs = append(stuffArgs, "--disable-pip-version-check")
-	}
-	stuffArgs = append(stuffArgs, args...)
 
-	return stuff(stuffArgs)
+	tufArgs = append(tufArgs, args...)
+	if withTuf {
+		tufArgs = append(tufArgs, "--index-url", tufPyPiServer)
+		tufArgs = append(tufArgs, "--extra-index-url", pyPiServer)
+		tufArgs = append(tufArgs, "--disable-pip-version-check")
+	}
+
+	return tuf(tufArgs)
 }
 
-func removeStuff(cmd *cobra.Command, args []string) error {
-	stuffArgs := []string{
+func removeTuf(cmd *cobra.Command, args []string) error {
+	tufArgs := []string{
 		"uninstall",
 	}
-	stuffArgs = append(stuffArgs, args...)
+	tufArgs = append(tufArgs, args...)
 
-	return stuff(stuffArgs)
+	return tuf(tufArgs)
 }
 
-func searchStuff(cmd *cobra.Command, args []string) error {
+func searchTuf(cmd *cobra.Command, args []string) error {
 
-	stuffArgs := []string{
+	tufArgs := []string{
 		"search",
 	}
+	tufArgs = append(tufArgs, args...)
 	if withTuf {
-		stuffArgs = append(stuffArgs, "--index-url", tufPyPiServer)
-		stuffArgs = append(stuffArgs, "--extra-index-url", pyPiServer)
-		stuffArgs = append(stuffArgs, "--disable-pip-version-check")
+		tufArgs = append(tufArgs, "--index-url", tufPyPiServer)
+		tufArgs = append(tufArgs, "--extra-index-url", pyPiServer)
+		tufArgs = append(tufArgs, "--disable-pip-version-check")
 	}
-	stuffArgs = append(stuffArgs, args...)
 
-	return stuff(stuffArgs)
+	return tuf(tufArgs)
 }
