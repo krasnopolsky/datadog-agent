@@ -15,6 +15,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/executable"
 	"github.com/spf13/cobra"
 )
@@ -131,6 +132,14 @@ func tuf(args []string) error {
 		args = append([]string{cmd}, cmdFlags...)
 		args = append(args, implicitFlags...)
 	}
+
+	// Proxy support
+	proxies, err := config.GetProxies()
+	if err == nil && proxies != nil {
+		proxyFlags := fmt.Sprintf("--proxy=%s", proxies.HTTPS)
+		args = append(args, proxyFlags)
+	}
+
 	// idx-flags go after the command and implicit flags
 	idxFlags, err := tufCmd.Flags().GetStringSlice("idx-flags")
 	if err == nil {
