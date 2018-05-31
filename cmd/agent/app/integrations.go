@@ -22,7 +22,7 @@ import (
 const (
 	constraintsFile = "agent_requirements.txt"
 	tufConfigFile   = "public-tuf-config.json"
-	tufPyPiServer   = "https://integrationsproxy.azurewebsites.net/simple/"
+	tufPyPiServer   = "https://integrations-core-wheels.s3.amazonaws.com/simple/"
 	pyPiServer      = "https://pypi.org/simple/"
 )
 
@@ -36,8 +36,14 @@ func init() {
 	tufCmd.AddCommand(installCmd)
 	tufCmd.AddCommand(removeCmd)
 	tufCmd.AddCommand(searchCmd)
-	tufCmd.Flags().BoolVarP(&withTuf, "tuf", "t", true, "use TUF repo")
-	tufCmd.Flags().BoolVarP(&nativePkg, "pip-package", "p", false, "providing native pip package name")
+	tufCmd.PersistentFlags().BoolVarP(&withTuf, "tuf", "t", true, "use TUF repo")
+	tufCmd.PersistentFlags().BoolVarP(&nativePkg, "pip-package", "p", false, "providing native pip package name")
+	tufCmd.PersistentFlags().StringSlice("cmd-flags", []string{}, "command flags to pass onto pip (comma-separated or multiple flags)")
+	tufCmd.PersistentFlags().StringSlice("idx-flags", []string{}, "index flags to pass onto pip (comma-separated or multiple flags)")
+
+	// Power user flags - mark as hidden
+	tufCmd.Flags().MarkHidden("cmd-flags")
+	tufCmd.Flags().MarkHidden("idx-flags")
 }
 
 var tufCmd = &cobra.Command{
@@ -49,7 +55,6 @@ var tufCmd = &cobra.Command{
 var installCmd = &cobra.Command{
 	Use:   "install [package]",
 	Short: "Install Datadog integration/extra packages",
-	Args:  cobra.ArbitraryArgs,
 	Long:  ``,
 	RunE:  installTuf,
 }
@@ -57,7 +62,6 @@ var installCmd = &cobra.Command{
 var removeCmd = &cobra.Command{
 	Use:   "remove [package]",
 	Short: "Remove Datadog integration/extra packages",
-	Args:  cobra.ArbitraryArgs,
 	Long:  ``,
 	RunE:  removeTuf,
 }
@@ -65,7 +69,6 @@ var removeCmd = &cobra.Command{
 var searchCmd = &cobra.Command{
 	Use:   "search [package]",
 	Short: "Search Datadog integration/extra packages",
-	Args:  cobra.ArbitraryArgs,
 	Long:  ``,
 	RunE:  searchTuf,
 }
@@ -117,6 +120,21 @@ func tuf(args []string) error {
 	tufPath, err := getTUFConfigFilePath()
 	if err != nil && withTuf {
 		return err
+	}
+
+	// Add pip power-user flags
+	// cmd-flags go before the actual command
+	cmdFlags, err := tufCmd.Flags().GetStringSlice("cmd-flags")
+	if err == nil {
+		cmd := args[0]
+		implicitFlags := args[1:]
+		args = append([]string{cmd}, cmdFlags...)
+		args = append(args, implicitFlags...)
+	}
+	// idx-flags go after the command and implicit flags
+	idxFlags, err := tufCmd.Flags().GetStringSlice("idx-flags")
+	if err == nil {
+		args = append(args, idxFlags...)
 	}
 
 	tufCmd := exec.Command(pipPath, args...)
