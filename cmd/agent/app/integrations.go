@@ -41,7 +41,7 @@ func init() {
 }
 
 var tufCmd = &cobra.Command{
-	Use:   "stuff [command]",
+	Use:   "integration [command]",
 	Short: "Datadog integration/package manager",
 	Long:  ``,
 }
@@ -49,6 +49,7 @@ var tufCmd = &cobra.Command{
 var installCmd = &cobra.Command{
 	Use:   "install [package]",
 	Short: "Install Datadog integration/extra packages",
+	Args:  cobra.ArbitraryArgs,
 	Long:  ``,
 	RunE:  installTuf,
 }
@@ -56,6 +57,7 @@ var installCmd = &cobra.Command{
 var removeCmd = &cobra.Command{
 	Use:   "remove [package]",
 	Short: "Remove Datadog integration/extra packages",
+	Args:  cobra.ArbitraryArgs,
 	Long:  ``,
 	RunE:  removeTuf,
 }
@@ -63,6 +65,7 @@ var removeCmd = &cobra.Command{
 var searchCmd = &cobra.Command{
 	Use:   "search [package]",
 	Short: "Search Datadog integration/extra packages",
+	Args:  cobra.ArbitraryArgs,
 	Long:  ``,
 	RunE:  searchTuf,
 }
@@ -163,6 +166,7 @@ func removeTuf(cmd *cobra.Command, args []string) error {
 		"uninstall",
 	}
 	tufArgs = append(tufArgs, args...)
+	tufArgs = append(tufArgs, "-y")
 
 	return tuf(tufArgs)
 }
