@@ -9,6 +9,7 @@
 package app
 
 import (
+	"os/user"
 	"path/filepath"
 )
 
@@ -21,3 +22,8 @@ var (
 	relConstraintsPath   = filepath.Join("..", constraintsFile)
 	relTufConfigFilePath = filepath.Join("..", tufConfigFile)
 )
+
+func authorizedUser() bool {
+	// TODO: implement something useful
+	return true
+}
