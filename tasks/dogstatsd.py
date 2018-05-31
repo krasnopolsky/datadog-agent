@@ -181,7 +181,7 @@ def omnibus_build(ctx, log_level="info", base_dir=None, gem_path=None,
         }
         if omnibus_s3_cache:
             args['populate_s3_cache'] = " --populate-s3-cache "
-        ctx.run(cmd.format(**args))
+        ctx.run(cmd.format(**args), env=env)
 
 
 @task
