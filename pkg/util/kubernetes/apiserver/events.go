@@ -10,6 +10,7 @@ package apiserver
 //// Covered by test/integration/util/kube_apiserver/events_test.go
 
 import (
+	"reflect"
 	"strconv"
 	"time"
 
@@ -44,7 +45,7 @@ func (c *APIClient) LatestEvents(since string) ([]*v1.Event, []*v1.Event, string
 
 	eventWatcher, errs := c.Client.Events("").Watch(metav1.ListOptions{Watch: true, ResourceVersion: since})
 	if errs != nil {
-		log.Debugf("error getting watcher")
+		log.Debugf("Could not get watch for events: %s", err)
 	}
 	watcherTimeout := time.NewTimer(eventReadTimeout)
 	for {
@@ -69,7 +70,7 @@ func (c *APIClient) LatestEvents(since string) ([]*v1.Event, []*v1.Event, string
 
 			currEvent, ok := rcvdEv.Object.(*v1.Event)
 			if !ok {
-				log.Debugf("Unexpected format for the evaluated event. Skipping.")
+				log.Debugf("The event object cannot be safely converted to the expected type: %v", reflect.TypeOf(rcvdEv.Object).Name())
 				continue
 			}
 
